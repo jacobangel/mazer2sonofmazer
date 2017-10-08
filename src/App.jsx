@@ -103,12 +103,12 @@ class MazeExample extends Component {
     if (maze) {
       console.log(maze);
       const { gridSize } = this.props;
-      const drawLine = (x, y, x2, y2) => {
+      maze.draw((x, y, x2, y2) => {
+        ctx.beginPath();
         ctx.moveTo(x * gridSize, y * gridSize);  
         ctx.lineTo(x2 * gridSize, y2 * gridSize);
         ctx.stroke(); 
-      }
-      maze.draw(drawLine); 
+      }); 
     } else {
       this.drawGrid(ctx);
     }
