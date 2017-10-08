@@ -8,8 +8,15 @@ function shuffleArray(arr) {
   return arr;
 }
 
+const BORDERS = {
+  ENTRANCE: 'ENTRANCE',
+  WALL: 'WALL',
+  NONE: 'NONE',
+};
+
 export class Cell {
   constructor(x, y) {
+    // it would have been better probably to just link them all together. i know.
     this.cellNeighbors = [
                 [0, -1],
       [-1,  0], /* x, y */ [1,  0],
