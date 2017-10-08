@@ -1,10 +1,4 @@
 # Get out 
 
-I'm just messing around with some simple websocket / express / game integrations.
+I'm just messing around with some drawing a maze without doing much research at all. 
 
-## Goals
-
-- [ ] - Simple websocket-supporting express server
-- [ ] - Two clients talking to each other
-- [ ] - A game of some kind.
-- [ ] - Figure out why i have to wrap http around express.
