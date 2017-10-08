@@ -45,7 +45,7 @@ Canvas.defaultProps = {
   height: 10,
   onDraw: (context, canvas) => { console.log(context, canvas); }
 }
-console.log(new Maze(1, 3));
+
 class MazeExample extends Component {
   constructor() {
     super();
@@ -81,9 +81,7 @@ class MazeExample extends Component {
   getMaze(type) {
     switch (type) {
       case 'RBT': 
-        const maze = new Maze(this.props.width, this.props.height);
-        maze.visit();
-        return maze;
+        return new Maze(this.props.width, this.props.height);
     }
     return [];
   }
@@ -103,10 +101,17 @@ class MazeExample extends Component {
     if (maze) {
       console.log(maze);
       const { gridSize } = this.props;
-      maze.draw((x, y, x2, y2) => {
+      maze.draw((x, y, x2, y2, type) => {
         ctx.beginPath();
         ctx.moveTo(x * gridSize, y * gridSize);  
         ctx.lineTo(x2 * gridSize, y2 * gridSize);
+        if (type === 'START') {
+          ctx.strokeStyle = '#FF0000';
+          ctx.lineWidth = 5;
+        } else {
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+        }
         ctx.stroke(); 
       }); 
     } else {
@@ -130,8 +135,8 @@ class MazeExample extends Component {
         {this.props.title && <h3>{this.props.title}</h3>}
         <Canvas 
           ref={(comp) => { this.comp = comp;}}
-          height={gridSize * height} 
-          width={gridSize * width} 
+          height={gridSize * height + 4} 
+          width={gridSize * width + 4} 
           onDraw={this.drawMaze}
         />
         <ul>

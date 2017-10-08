@@ -25,6 +25,21 @@ export class Cell {
     this.visited = false;
   }
 
+  setStart() {
+    console.log(this);
+    this.isStart = true;
+    const [ x, y ] = this.coord;
+    if (x === 0) {
+      this.walls.W = 'START';
+    } else if (y === 0) {
+      this.walls.N = 'START';
+    } else if (x > y) {
+      this.walls.E = 'START';
+    } else {
+      this.walls.S = 'START';
+    }
+  }
+
   link(cell) {
     const [ x, y ] = this.coord;
     const [ x2, y2 ] = cell.coord;
@@ -90,17 +105,17 @@ export class Cell {
  */
 export class Maze {
   constructor(x, y) {
-    let grid = [];
-    for (let i = 0; i < x; i++)  {
-      grid[i] = [];
-      for (let j = 0; j < y; j++)  {
-        grid[i][j] = new Cell(i, j);
-      }
-    }
-    this.grid = grid;
     this.width = x;
     this.height = y;
     this.stack = [];
+    this.grid = [];
+    for (let i = 0; i < x; i++)  {
+      this.grid[i] = [];
+      for (let j = 0; j < y; j++)  {
+        this.grid[i][j] = new Cell(i, j);
+      }
+    }
+    this.build();
   }
 
   getCell(x, y) {
@@ -116,22 +131,40 @@ export class Maze {
   }
 
   randomCell() {
-    return this.grid[
-      Math.floor(Math.random() * this.width)
-    ][
-      Math.floor(Math.random() * this.height)
-    ];
+    const x = Math.floor(Math.random() * this.width);
+    const y = Math.floor(Math.random() * this.height);
+    return this.grid[x][y];
   }
 
-  visit() {
-    this.stack = [];
-    this.visitCells(this.randomCell());
+  isEdge(cell) {
+    return (
+      cell.coord[0] === 0 || 
+      cell.coord[0] === this.width -1 || 
+      cell.coord[1] === 0 || 
+      cell.coord[1] === this.height - 1
+    );
+  }
+
+  randomEdgeCell() {
+    let random = this.randomCell();
+    while( !this.isEdge(random) ) {
+      random = this.randomCell();
+    }
+    return random;
+  }
+
+  build() {
+    let random = this.randomEdgeCell();
+    random.setStart();
+    random = this.randomEdgeCell();
+    random.setStart();
+    this.visitCells(random);
  }
 
   visitCells(currentCell) {
     currentCell.markAsVisited();
     let unvisited = null;
-    while(unvisited = currentCell.getUnvisitedNeighbor(this)) {
+    while (unvisited = currentCell.getUnvisitedNeighbor(this)) {
       this.stack.push(currentCell);
       currentCell.link(unvisited);
       this.visitCells(unvisited);
@@ -143,24 +176,27 @@ export class Maze {
     }
   }
 
+  /**
+   * Draws the maze on whatever you send it. 
+   * @param {function} drawLine Draws a line given some coordinates.
+   */
   draw(drawLine) {
     this.grid.forEach((row) => {
       row.forEach(cell => {
         const { walls } = cell;
         const [ x, y ] = cell.coord;
         if (walls.N) {
-          drawLine(x, y, x + 1, y);
+          drawLine(x, y, x + 1, y, walls.N);
         }
         if (walls.E) {
-          drawLine(x + 1, y, x + 1, y + 1);
+          drawLine(x + 1, y, x + 1, y + 1, walls.E);
         }
         if (walls.S) {
-          drawLine(x, y + 1, x + 1, y + 1);
+          drawLine(x, y + 1, x + 1, y + 1, walls.S);
         }
         if (walls.W) {
-          drawLine(x, y, x, y + 1);
+          drawLine(x, y, x, y + 1, walls.W);
         }
-
       });
     });
   }
