@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styles from './App.css';
+import { Cell, Maze } from './Maze';
+
 
 // draw a grid on a canvas. 
 // can simply generate a maze from that. 
@@ -43,189 +45,17 @@ Canvas.defaultProps = {
   height: 10,
   onDraw: (context, canvas) => { console.log(context, canvas); }
 }
-
-
-class Cell {
-  constructor(x, y) {
-    this.cellNeighbors = [
-                [0, -1],
-      [-1,  0], /* x, y */ [1,  0],
-                [0,  1],
-    ]
-    this.coord = [ x, y ];
-    this.walls = {
-      'N': true,
-      'S': true,
-      'E': true,
-      'W': true,
-    };
-    this.visited = false;
-  }
-
-  link(cell) {
-    const [ x, y ] = this.coord;
-    const [ x2, y2 ] = cell.coord;
-    if (x === x2) { 
-      if (y - 1 === y2) {
-        this.walls.N = false;
-        cell.walls.S = false;
-        return;
-      } 
-      if (y + 1 === y2) {
-        this.walls.S = false;
-        cell.walls.N = false;
-        return;
-      }
-    }
-    if (y === y2) {
-      if (x - 1 === x2) {
-        this.walls.W = false;
-        cell.walls.E = false;
-        return;
-      } 
-      if (x + 1 === x2) {
-        this.walls.E = false;
-        cell.walls.W = false;
-        return;
-      }
-    }
-    console.warn('Cannot link these cells.', this, cell);
-  }
-
-  markAsVisited() {
-    this.visited = true;
-  }
-
-  getUnvisitedNeighbor(maze) {
-    const perms = this.cellNeighbors;
-    for (let i = 0; i < perms.length; i++) {
-      let [offsetX, offsetY] = perms[i];
-      let [ x, y ] = this.coord;
-      let cell = maze.getCell(x + offsetX, y + offsetY);
-      if (cell && !cell.visited) {
-        return cell;
-      }
-    }
-    return false;
-  }
-}
-
-class Maze {
-  constructor(x, y) {
-    const grid = new Array(x);
-    for (let i = 0; i < x; i++)  {
-      grid[i] = new Array(y);
-      for (let j = 0; j < y; j++)  {
-        grid[i][j] = new Cell(i, j);
-      }
-    }
-    this.grid = grid;
-    this.width = x;
-    this.height = y;
-  }
-
-  getCell(x, y) {
-    if (x < 0 || x >= this.grid.length) {
-      return null;
-    }
-
-    if (y < 0 || y >= this.grid[0].length) {
-      return null;
-    }
-
-    return this.grid[x][y];
-  }
-
-  randomCell() {
-    return this.grid[
-      Math.floor(Math.random() * this.width)
-    ][
-      Math.floor(Math.random() * this.height)
-    ];
-  }
-
-  visit() {
-    this.stack = [];
-    this.visitCells(this.randomCell());
- }
-
-  visitCells(currentCell) {
-    console.log('[currentCell', currentCell);
-    currentCell.markAsVisited();
-    let unvisited = null;
-    while(unvisited = currentCell.getUnvisitedNeighbor(this)) {
-      this.stack.push(currentCell);
-      currentCell.link(unvisited);
-      this.visitCells(unvisited);
-    }
-    if (this.stack.length !== 0) {
-      const newCurrent = this.stack.pop();
-      this.visitCells(newCurrent);
-    }
- 
-  }
-
-  draw(context, gridSize) {
-    const drawLine = (x, y, x2, y2) => {
-      context.moveTo(x * gridSize, y * gridSize);  
-      context.lineTo(x2 * gridSize, y2 * gridSize);
-      context.stroke(); 
-    }
-    this.grid.forEach((row) => {
-      row.forEach(cell => {
-        const [ x, y ] = cell.coord;
-        if (cell.N) {
-          drawLine(x, y, x + 1, y);
-        }
-        if (cell.E) {
-          drawLine(x + 1, y, x + 1, y + 1);
-        }
-        if (cell.S) {
-          drawLine(x, y + 1, x + 1, y + 1);
-        }
-        if (cell.W) {
-          drawLine(x, y, x, y + 1);
-        }
-
-      });
-    });
-  }
-}
-
-/**
- * 
- * Recursive Backtracking
- * - Make the initial cell the current cell and mark it as visited 
- * - While there are unvisited cells
- *   - If the current cell has any neighbours which have not been visited
- *     Choose randomly one of the unvisited neighbours
- *     - Push the current cell to the stack
- *     - Remove the wall between the current cell and the chosen cell
- *      - Make the chosen cell the current cell and mark it as visited
- *   - Else if stack is not empty
- *     - Pop a cell from the stack
- *     - Make it the current cell
- */
-function getRBT(x, y) {
-  const maze = new Maze(x, y);
-  maze.visit();
-  return maze;
-}
-
-
+console.log(new Maze(1, 3));
 class MazeExample extends Component {
   constructor() {
     super();
     this.drawGrid = this.drawGrid.bind(this);
     this.drawMaze = this.drawMaze.bind(this);
-  }
-
-  componentDidMount() {
-
+    this.handleDraw = this.handleDraw.bind(this);
+    this.handleReset = this.handleReset.bind(this);
   }
 
   drawGrid(context) {
-    console.log('drawing grid');
     const { height, width, gridSize } = this.props;
     // draw longitiude
     for (let i = 0; i <= height; ++i) {
@@ -251,45 +81,55 @@ class MazeExample extends Component {
   getMaze(type) {
     switch (type) {
       case 'RBT': 
-        return getRBT(this.props.width, this.props.height);
+        const maze = new Maze(this.props.width, this.props.height);
+        maze.visit();
+        return maze;
     }
     return [];
   }
 
-  clear(context) {
+  clear(context, canvas) {
     context.clearRect(
       0, 
       0, 
-      this.props.width * this.props.gridSize, 
-      this.props.width * this.props.gridSize
+      canvas.width,
+      canvas.height
     );
   }
 
-  drawMaze (context, canvas) {
-    console.log('draw');
-    this.clear(context);
+  drawMaze (ctx, canvas) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const maze = this.getMaze(this.props.type);
     if (maze) {
-      maze.draw(context, this.props.gridSize); 
+      console.log(maze);
+      const { gridSize } = this.props;
+      const drawLine = (x, y, x2, y2) => {
+        ctx.moveTo(x * gridSize, y * gridSize);  
+        ctx.lineTo(x2 * gridSize, y2 * gridSize);
+        ctx.stroke(); 
+      }
+      maze.draw(drawLine); 
     } else {
-      this.drawGrid(context);
+      this.drawGrid(ctx);
     }
-    console.log(maze);
   }
 
   handleReset() {
     console.log('reset')
+    this.clear(this.comp.ctx, this.comp.canvas)
   }
 
   handleDraw() {
-    console.log('draw')
+    this.setState({ seed: Math.random() });
   }
 
   render() {
     const { gridSize, height, width } = this.props;
     return (
       <div className={styles.maze}>
+        {this.props.title && <h3>{this.props.title}</h3>}
         <Canvas 
+          ref={(comp) => { this.comp = comp;}}
           height={gridSize * height} 
           width={gridSize * width} 
           onDraw={this.drawMaze}
@@ -314,7 +154,7 @@ const App = () => {
   return (
     <div>
       <div className={styles.mazeWrapper}>
-        <MazeExample width={10} height={10} /> 
+        <MazeExample width={10} height={10} title="Recursive Backtracking" /> 
       </div> 
     </div>
   );
