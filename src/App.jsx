@@ -47,16 +47,22 @@ Canvas.defaultProps = {
 }
 
 class MazeExample extends Component {
-  constructor() {
+  constructor(props) {
     super();
     this.drawGrid = this.drawGrid.bind(this);
     this.drawMaze = this.drawMaze.bind(this);
     this.handleDraw = this.handleDraw.bind(this);
     this.handleReset = this.handleReset.bind(this);
+    this.state = {
+      gridSize: props.gridSize,
+      width: props.width,
+      height: props.height,
+    };
   }
 
   drawGrid(context) {
-    const { height, width, gridSize } = this.props;
+    const { height, width } = this.state;
+    const { gridSize } = this.state;
     // draw longitiude
     for (let i = 0; i <= height; ++i) {
       const x = i * gridSize;
@@ -79,9 +85,10 @@ class MazeExample extends Component {
    * @param {string} type the type of maze togenerate.
    */
   getMaze(type) {
+    const { width, height } = this.state;
     switch (type) {
       case 'RBT': 
-        return new Maze(this.props.width, this.props.height);
+        return new Maze(width, height);
     }
     return [];
   }
@@ -100,17 +107,17 @@ class MazeExample extends Component {
     const maze = this.getMaze(this.props.type);
     if (maze) {
       console.log(maze);
-      const { gridSize } = this.props;
+      const { gridSize } = this.state;
       maze.draw((x, y, x2, y2, type) => {
         ctx.beginPath();
-        ctx.moveTo(x * gridSize, y * gridSize);  
-        ctx.lineTo(x2 * gridSize, y2 * gridSize);
+        ctx.moveTo(2+ x * gridSize, 2 + y * gridSize);  
+        ctx.lineTo(2+ x2 * gridSize, 2 + y2 * gridSize);
         if (type === 'START') {
           ctx.strokeStyle = '#FF0000';
-          ctx.lineWidth = 5;
+          ctx.lineWidth = Math.max(gridSize/8, 1);
         } else {
           ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 2;
+          ctx.lineWidth = Math.max(gridSize/20, 0.5);
         }
         ctx.stroke(); 
       }); 
@@ -119,9 +126,15 @@ class MazeExample extends Component {
     }
   }
 
+
   handleReset() {
-    console.log('reset')
     this.clear(this.comp.ctx, this.comp.canvas)
+    this.setState({
+      width: this.props.width,
+      height: this.props.height,
+      gridSize: this.props.gridSize,
+    })
+    this.drawMaze(this.comp.ctx, this.comp.canvas);
   }
 
   handleDraw() {
@@ -129,7 +142,7 @@ class MazeExample extends Component {
   }
 
   render() {
-    const { gridSize, height, width } = this.props;
+    const { height, width, gridSize } = this.state;
     return (
       <div className={styles.maze}>
         {this.props.title && <h3>{this.props.title}</h3>}
@@ -142,6 +155,18 @@ class MazeExample extends Component {
         <ul>
           <li><button onClick={this.handleReset}>Reset Grid</button></li>
           <li><button onClick={this.handleDraw}>Draw</button></li>
+          <li>Grid Size: <input type='range' value={this.state.gridSize} min={5} max={80} step={1} onChange={(e) => {
+            const { value } = e.target;
+            this.setState({ gridSize: value });
+          }} /></li>
+          <li>Columns: <input type='range' value={this.state.width} min={5} max={40} step={1} onChange={(e) => {
+            const { value } = e.target;
+            this.setState({ width: value });
+          }} /></li>
+          <li>Rows: <input type='range' value={this.state.height} min={5} max={40} step={1} onChange={(e) => {
+            const { value } = e.target;
+            this.setState({ height: value });
+          }} /></li>
         </ul>
       </div>
     );
