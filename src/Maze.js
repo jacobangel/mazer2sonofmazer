@@ -8,6 +8,19 @@ function shuffleArray(arr) {
   return arr;
 }
 
+  /**
+   * Manhattan distance 
+   * function heuristic(node) =
+    dx = abs(node.x - goal.x)
+    dy = abs(node.y - goal.y)
+    return D * (dx + dy)} cb 
+   */
+function manhattanDist(node, goal) {
+  const dx = Math.abs(node.coord.x - goal.coord.x);
+  const dy = Math.abs(node.coord.y - goal.coord.y);
+  const D = 1; // cost to move.
+  return D * (dx + dy); 
+}
 /**
  * I kkonw this is a very lazy construction.
  */
@@ -61,15 +74,40 @@ export class Cell {
     this.visited = false;
     this.traversed = false;
   }
-
-  markAsTraversed() {
+  setAsPath() {
+    this.bestPath = true;
+  }
+  markAsTraversed(cost) {
     this.traversed = true;
+    this.cost = cost;
   }
 
   getKey() {
     return this.coord.join(',');
   }
 
+  getCheapestNeighbor(goal) {
+    let cheapest = null;
+    let cost = Infinity;
+    Object.values(this.walls).forEach(cell => {
+      if (!(cell instanceof Cell) || cell.visited) { return; } 
+      if (cheapest && cell.cost === cost && 
+        manhattanDist(cell, goal) < manhattanDist(cheapest, goal)
+      ) {
+        cell.markAsVisited();
+        cheapest = cell;
+        cost = cell.cost; 
+      } else if(cell.cost < cost) {
+        cell.markAsVisited();
+        cheapest = cell;
+        cost = cell.cost;
+      }
+    })
+    return cheapest;
+  }
+  markAsUnvisited() {
+    this.visited = false;
+  }
   setEntrance() {
     this.isEntrance = true;
     const [ x, y ] = this.coord;
@@ -204,7 +242,16 @@ export class Maze {
     this.end = this.randomEdgeCell();
     this.end.setEntrance();
     this.visitCells(this.start);
- }
+    this.resetVisited();
+  }
+
+  resetVisited() {
+    this.grid.forEach(row => {
+      row.forEach(cell => {
+        cell.markAsUnvisited();
+      });
+    });
+  }
 
   visitCells(currentCell) {
     currentCell.markAsVisited();
@@ -238,28 +285,13 @@ export class Maze {
         if (cell.bestPath) {
           fillType = 'PATH';
         }
-        fillBorder(x, y, fillType);
+        fillBorder(x, y, fillType, cell.cost);
         drawLine(x, y, x + 1, y, walls.N);
         drawLine(x + 1, y, x + 1, y + 1, walls.E);
         drawLine(x, y + 1, x + 1, y + 1, walls.S);
         drawLine(x, y, x, y + 1, walls.W);
       });
     });
-  }
-
-
-  /**
-   * Manhattan distance 
-   * function heuristic(node) =
-    dx = abs(node.x - goal.x)
-    dy = abs(node.y - goal.y)
-    return D * (dx + dy)} cb 
-   */
-  manhattanDist(node, goal) {
-    const dx = Math.abs(node.coord.x - this.end.coord.x);
-    const dy = Math.abs(node.coord.y - this.end.coord.y);
-    const D = 1; // cost to move.
-    return D * (dx + dy); 
   }
 
   // cost is always one cuz we r basic af.
@@ -278,8 +310,21 @@ export class Maze {
     })
     return neighbors; 
   }
+  walkCheapest(node, goal) {
+    if (!node) {
+      return;
+    }
 
-  aStar(node = this.start, goal = this.end) {
+    node.setAsPath();
+    node.markAsVisited();
+    this.walkCheapest(node.getCheapestNeighbor(goal), goal)
+  }
+  aStar() {
+    this._aStar(this.start, this.end);
+    this.walkCheapest(this.end, this.start);
+    this.resetVisited();
+  }
+  _aStar(node = this.start, goal = this.end) {
     const frontier = new PriorityQueue(); 
     const from = {};
     const cost = {};
@@ -291,11 +336,13 @@ export class Maze {
     while(!frontier.isEmpty()) {
       let current = frontier.get();
       if (current.getKey() === goal.getKey()) {
-        Object.values(from).filter(x => x).forEach(f => { 
-          f.markAsTraversed() 
+        Object.keys(from).forEach((f, i) => { 
+          const cell = from[f]
+          if (!cell) { return }
+          cell.markAsTraversed(cost[f]);
         });
         goal.markAsTraversed();
-        return { from };
+        return { from, cost };
       }
 
       const neighbors = this.getNeighbors(current);
@@ -303,7 +350,7 @@ export class Maze {
         const newCost = cost[current.getKey()] + this.getCost(current, next);
         if (cost[next.getKey()] === undefined || newCost < cost[next.getKey()]) {
           cost[next.getKey()] = newCost;
-          let priority = newCost + this.manhattanDist(next, goal);
+          let priority = newCost + manhattanDist(next, goal);
           frontier.put(next, priority);
           from[next.getKey()] = current;
         }

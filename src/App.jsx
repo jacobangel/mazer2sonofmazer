@@ -113,17 +113,23 @@ class MazeExample extends Component {
     if (maze) {
       console.log(maze);
       const { gridSize } = this.state;
-      const fillBorder = (x, y, type) => {
+      const fillBorder = (x, y, type, cost) => {
         const fillMap = {
           PATH: '#770000',
           SCANNED: '#FFFF00',
           EMPTY: '#FFFFFF'
         }
+
         ctx.fillStyle = fillMap[type] || fillMap.EMPTY;
         ctx.fillRect(
           2+ x * gridSize, 2 + y * gridSize,
           2+ (1 + x) * gridSize, 2 + (1 + y) * gridSize
         )
+        if (type === 'SCANNED' || type === 'PATH') {
+          ctx.fillStyle = 'black';
+          ctx.font = '10px Helvetica';
+          ctx.fillText(cost, 10 + x * gridSize, 10 + y * gridSize)
+        }
       }
       const drawLine = (x, y, x2, y2, type) => {
         if (type instanceof Cell) {
