@@ -57,6 +57,7 @@ class MazeExample extends Component {
       gridSize: props.gridSize,
       width: props.width,
       height: props.height,
+      maze: this.getMaze(props.type, props.height, props.width),
     };
   }
 
@@ -84,8 +85,11 @@ class MazeExample extends Component {
    * Return an array of coordiantes given a type of maze. 
    * @param {string} type the type of maze togenerate.
    */
-  getMaze(type) {
-    const { width, height } = this.state;
+  getMaze(type, width, height) {
+    if (!width && !height) {
+      width = this.state.width;
+      height = this.state.height; 
+    }
     switch (type) {
       case 'RBT': 
         return new Maze(width, height);
@@ -104,7 +108,7 @@ class MazeExample extends Component {
 
   drawMaze (ctx, canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const maze = this.getMaze(this.props.type);
+    const { maze } = this.state;
     if (maze) {
       console.log(maze);
       const { gridSize } = this.state;
@@ -129,19 +133,26 @@ class MazeExample extends Component {
 
   handleReset() {
     this.clear(this.comp.ctx, this.comp.canvas)
+    const maze = this.getMaze(this.props.type, this.props.width, this.props.height);
     this.setState({
       width: this.props.width,
       height: this.props.height,
       gridSize: this.props.gridSize,
-    })
-    this.drawMaze(this.comp.ctx, this.comp.canvas);
+      maze,
+    });
   }
 
   handleDraw() {
-    this.setState({ seed: Math.random() });
+    this.setState({ 
+      seed: Math.random() 
+    });
   }
 
   handleAStar() {
+  }
+
+  componentDidUpdate() {
+    this.drawMaze(this.comp.ctx, this.comp.canvas);
   }
 
   render() {
@@ -156,7 +167,7 @@ class MazeExample extends Component {
           onDraw={this.drawMaze}
         />
         <ul>
-          <li><button onClick={this.handleReset}>Reset Grid</button></li>
+          <li><button onClick={this.handleReset}>Reset</button></li>
           <li><button onClick={this.handleDraw}>Draw</button></li>
           <li><button onClick={this.handleAStar}>Traverse A*</button></li>
           <li>Grid Size: <input type='range' value={this.state.gridSize} min={5} max={80} step={1} onChange={(e) => {
@@ -165,11 +176,13 @@ class MazeExample extends Component {
           }} /></li>
           <li>Columns: <input type='range' value={this.state.width} min={5} max={40} step={1} onChange={(e) => {
             const { value } = e.target;
-            this.setState({ width: value });
+            const maze = this.getMaze(this.props.type);
+            this.setState({ width: value, maze });
           }} /></li>
           <li>Rows: <input type='range' value={this.state.height} min={5} max={40} step={1} onChange={(e) => {
             const { value } = e.target;
-            this.setState({ height: value });
+            const maze = this.getMaze(this.props.type);
+            this.setState({ height: value, maze });
           }} /></li>
         </ul>
       </div>
