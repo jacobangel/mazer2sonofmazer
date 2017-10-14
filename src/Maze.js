@@ -285,7 +285,7 @@ export class Maze {
         if (cell.bestPath) {
           fillType = 'PATH';
         }
-        fillBorder(x, y, fillType, cell.cost);
+        fillBorder(x, y, fillType, cell.cost, this.end.cost);
         drawLine(x, y, x + 1, y, walls.N);
         drawLine(x + 1, y, x + 1, y + 1, walls.E);
         drawLine(x, y + 1, x + 1, y + 1, walls.S);
@@ -303,7 +303,6 @@ export class Maze {
   getNeighbors(node) {
     const neighbors = [];
     Object.values(node.walls).forEach((side) => {
-      console.log(side);
       if (side instanceof Cell) {
         neighbors.push(side);
       }
@@ -336,12 +335,14 @@ export class Maze {
     while(!frontier.isEmpty()) {
       let current = frontier.get();
       if (current.getKey() === goal.getKey()) {
+        let lastCost = 0;
         Object.keys(from).forEach((f, i) => { 
           const cell = from[f]
           if (!cell) { return }
           cell.markAsTraversed(cost[f]);
+          lastCost = cost[f];
         });
-        goal.markAsTraversed();
+        goal.markAsTraversed(lastCost + 1);
         return { from, cost };
       }
 

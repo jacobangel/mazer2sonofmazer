@@ -111,12 +111,20 @@ class MazeExample extends Component {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const { maze } = this.state;
     if (maze) {
-      console.log(maze);
       const { gridSize } = this.state;
-      const fillBorder = (x, y, type, cost) => {
+      const fillBorder = (x, y, type, cost = 0, maxCost) => {
+        let pathColor = [255, 100, 235];
+        let scanColor = [255, 255, 0];
+        const clampColor = (x) => Math.min(255, Math.max(0, x));
+        const adjustColor = (color) => {
+          return 'rgb(' + color.map(
+            (v, i) => v - Math.round((((3 - i) / 10)) * v * cost / maxCost)
+          ).map(clampColor).join(',') 
+            + ')'
+         };
         const fillMap = {
-          PATH: '#FF4444',
-          SCANNED: '#FFFF00',
+          PATH: adjustColor(pathColor), 
+          SCANNED: adjustColor(scanColor),
           EMPTY: '#FFFFFF'
         }
 
@@ -125,11 +133,11 @@ class MazeExample extends Component {
           2+ x * gridSize, 2 + y * gridSize,
           2+ (1 + x) * gridSize, 2 + (1 + y) * gridSize
         )
-        if (type === 'SCANNED' || type === 'PATH') {
-          ctx.fillStyle = 'black';
-          ctx.font = '10px Helvetica';
-          ctx.fillText(cost, 10 + x * gridSize, 10 + y * gridSize)
-        }
+        // if (type === 'SCANNED' || type === 'PATH') {
+        //   ctx.fillStyle = 'black';
+        //   ctx.font = '10px Helvetica';
+        //   ctx.fillText(cost, 10 + x * gridSize, 10 + y * gridSize)
+        // }
       }
       const drawLine = (x, y, x2, y2, type) => {
         if (type instanceof Cell) {
@@ -171,7 +179,6 @@ class MazeExample extends Component {
 
   handleAStar() {
     const result = this.state.maze.aStar();
-    console.log(result);
     this.drawMaze(this.comp.ctx, this.comp.canvas);  
   }
 
@@ -203,7 +210,7 @@ class MazeExample extends Component {
             const maze = this.getMaze(this.props.type);
             this.setState({ width: value, maze });
           }} /></li>
-          <li>Rows: <input type='range' value={this.state.height} min={5} max={80} step={1} onChange={(e) => {
+          <li>Rows: <input type='range' value={this.state.height} min={5} max={40} step={1} onChange={(e) => {
             const { value } = e.target;
             const maze = this.getMaze(this.props.type);
             this.setState({ height: value, maze });
