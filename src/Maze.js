@@ -24,11 +24,12 @@ class PriorityQueue {
   }
 
   isEmpty() {
-    return this._interior.length !== 0;
+    return this._interior.length === 0;
   }
 
   get() {
-    return this._interior.unshift();
+    const head = this._interior.shift();
+    return head.item;
   }
 
   peek() {
@@ -58,6 +59,11 @@ export class Cell {
       'W': true,
     };
     this.visited = false;
+    this.traversed = false;
+  }
+
+  markAsTraversed() {
+    this.traversed = true;
   }
 
   getKey() {
@@ -83,25 +89,25 @@ export class Cell {
     const [ x2, y2 ] = cell.coord;
     if (x === x2) { 
       if (y - 1 === y2) {
-        this.walls.N = false;
-        cell.walls.S = false;
+        this.walls.N = cell;
+        cell.walls.S = this;
         return;
       } 
       if (y + 1 === y2) {
-        this.walls.S = false;
-        cell.walls.N = false;
+        this.walls.S = cell;
+        cell.walls.N = this;
         return;
       }
     }
     if (y === y2) {
       if (x - 1 === x2) {
-        this.walls.W = false;
-        cell.walls.E = false;
+        this.walls.W = cell;
+        cell.walls.E = this;
         return;
       } 
       if (x + 1 === x2) {
-        this.walls.E = false;
-        cell.walls.W = false;
+        this.walls.E = cell;
+        cell.walls.W = this;
         return;
       }
     }
@@ -193,11 +199,11 @@ export class Maze {
   }
 
   build() {
-    this.head = this.randomEdgeCell();
-    this.head.setEntrance();
+    this.start = this.randomEdgeCell();
+    this.start.setEntrance();
     this.end = this.randomEdgeCell();
     this.end.setEntrance();
-    this.visitCells(this.head);
+    this.visitCells(this.start);
  }
 
   visitCells(currentCell) {
@@ -219,23 +225,24 @@ export class Maze {
    * Draws the maze on whatever you send it. 
    * @param {function} drawLine Draws a line given some coordinates.
    */
-  draw(drawLine) {
+  draw(fillBorder, drawLine) {
     this.grid.forEach((row) => {
       row.forEach(cell => {
         const { walls } = cell;
         const [ x, y ] = cell.coord;
-        if (walls.N) {
-          drawLine(x, y, x + 1, y, walls.N);
+        // rewrite this to leverage cell neighbors yo.
+        let fillType = 'EMPTY';
+        if (cell.traversed) {
+          fillType = 'SCANNED';
         }
-        if (walls.E) {
-          drawLine(x + 1, y, x + 1, y + 1, walls.E);
+        if (cell.bestPath) {
+          fillType = 'PATH';
         }
-        if (walls.S) {
-          drawLine(x, y + 1, x + 1, y + 1, walls.S);
-        }
-        if (walls.W) {
-          drawLine(x, y, x, y + 1, walls.W);
-        }
+        fillBorder(x, y, fillType);
+        drawLine(x, y, x + 1, y, walls.N);
+        drawLine(x + 1, y, x + 1, y + 1, walls.E);
+        drawLine(x, y + 1, x + 1, y + 1, walls.S);
+        drawLine(x, y, x, y + 1, walls.W);
       });
     });
   }
@@ -262,23 +269,33 @@ export class Maze {
 
   // boy i really should have used a graph lol.
   getNeighbors(node) {
-
-    return []; 
+    const neighbors = [];
+    Object.values(node.walls).forEach((side) => {
+      console.log(side);
+      if (side instanceof Cell) {
+        neighbors.push(side);
+      }
+    })
+    return neighbors; 
   }
 
-  aStar(node, goal) {
+  aStar(node = this.start, goal = this.end) {
     const frontier = new PriorityQueue(); 
-    frontier.put(node, 0);
     const from = {};
     const cost = {};
-    from[node.getKey()] = null;
+
+    frontier.put(node, 0);
+    from[node.getKey()] = node;
     cost[node.getKey()] = 0;
 
-    while(!frontier.empty()) {
+    while(!frontier.isEmpty()) {
       let current = frontier.get();
       if (current.getKey() === goal.getKey()) {
-        console.log(from);
-        return;
+        Object.values(from).filter(x => x).forEach(f => { 
+          f.markAsTraversed() 
+        });
+        goal.markAsTraversed();
+        return { from };
       }
 
       const neighbors = this.getNeighbors(current);

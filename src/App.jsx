@@ -53,6 +53,7 @@ class MazeExample extends Component {
     this.drawMaze = this.drawMaze.bind(this);
     this.handleDraw = this.handleDraw.bind(this);
     this.handleReset = this.handleReset.bind(this);
+    this.handleAStar = this.handleAStar.bind(this);
     this.state = {
       gridSize: props.gridSize,
       width: props.width,
@@ -112,19 +113,36 @@ class MazeExample extends Component {
     if (maze) {
       console.log(maze);
       const { gridSize } = this.state;
-      maze.draw((x, y, x2, y2, type) => {
+      const fillBorder = (x, y, type) => {
+        const fillMap = {
+          PATH: '#770000',
+          SCANNED: '#FFFF00',
+          EMPTY: '#FFFFFF'
+        }
+        ctx.fillStyle = fillMap[type] || fillMap.EMPTY;
+        ctx.fillRect(
+          2+ x * gridSize, 2 + y * gridSize,
+          2+ (1 + x) * gridSize, 2 + (1 + y) * gridSize
+        )
+      }
+      const drawLine = (x, y, x2, y2, type) => {
+        if (type instanceof Cell) {
+          return;
+        }
+        // draw borders
         ctx.beginPath();
         ctx.moveTo(2+ x * gridSize, 2 + y * gridSize);  
         ctx.lineTo(2+ x2 * gridSize, 2 + y2 * gridSize);
         if (type === BORDER.ENTRANCE) {
           ctx.strokeStyle = '#FF0000';
           ctx.lineWidth = Math.max(gridSize/8, 1);
-        } else {
+        } else if (type === true){
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = Math.max(gridSize/20, 0.5);
         }
         ctx.stroke(); 
-      }); 
+      }; 
+      maze.draw(fillBorder, drawLine);
     } else {
       this.drawGrid(ctx);
     }
@@ -149,6 +167,9 @@ class MazeExample extends Component {
   }
 
   handleAStar() {
+    const result = this.state.maze.aStar();
+    console.log(result);
+    this.drawMaze(this.comp.ctx, this.comp.canvas);  
   }
 
   componentDidUpdate() {
