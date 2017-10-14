@@ -8,7 +8,35 @@ function shuffleArray(arr) {
   return arr;
 }
 
-const BORDERS = {
+/**
+ * I kkonw this is a very lazy construction.
+ */
+class PriorityQueue {
+  constructor() {
+    this._interior = []
+  }
+
+  put(item, priority) {
+    this._interior.push({ item, priority });
+    this._interior.sort((a, b) => {
+      return b.priority - a.priority;
+    })
+  }
+
+  isEmpty() {
+    return this._interior.length !== 0;
+  }
+
+  get() {
+    return this._interior.unshift();
+  }
+
+  peek() {
+    return this._interior[0];
+  }
+}
+
+export const BORDER = {
   ENTRANCE: 'ENTRANCE',
   WALL: 'WALL',
   NONE: 'NONE',
@@ -32,18 +60,21 @@ export class Cell {
     this.visited = false;
   }
 
-  setStart() {
-    console.log(this);
-    this.isStart = true;
+  getKey() {
+    return this.coord.join(',');
+  }
+
+  setEntrance() {
+    this.isEntrance = true;
     const [ x, y ] = this.coord;
     if (x === 0) {
-      this.walls.W = 'START';
+      this.walls.W = BORDER.ENTRANCE;
     } else if (y === 0) {
-      this.walls.N = 'START';
+      this.walls.N = BORDER.ENTRANCE;
     } else if (x > y) {
-      this.walls.E = 'START';
+      this.walls.E = BORDER.ENTRANCE;
     } else {
-      this.walls.S = 'START';
+      this.walls.S = BORDER.ENTRANCE;
     }
   }
 
@@ -116,6 +147,8 @@ export class Maze {
     this.height = y;
     this.stack = [];
     this.grid = [];
+    this.start = null;
+    this.end = null;
     for (let i = 0; i < x; i++)  {
       this.grid[i] = [];
       for (let j = 0; j < y; j++)  {
@@ -126,11 +159,10 @@ export class Maze {
   }
 
   getCell(x, y) {
-    if (x < 0 || x >= this.grid.length) {
-      return null;
-    }
-
-    if (y < 0 || y >= this.grid[0].length) {
+    if (
+      x < 0 || x >= this.grid.length || 
+      y < 0 || y >= this.grid[0].length
+    ) {
       return null;
     }
 
@@ -161,11 +193,11 @@ export class Maze {
   }
 
   build() {
-    let random = this.randomEdgeCell();
-    random.setStart();
-    random = this.randomEdgeCell();
-    random.setStart();
-    this.visitCells(random);
+    this.head = this.randomEdgeCell();
+    this.head.setEntrance();
+    this.end = this.randomEdgeCell();
+    this.end.setEntrance();
+    this.visitCells(this.head);
  }
 
   visitCells(currentCell) {
@@ -206,6 +238,60 @@ export class Maze {
         }
       });
     });
+  }
+
+
+  /**
+   * Manhattan distance 
+   * function heuristic(node) =
+    dx = abs(node.x - goal.x)
+    dy = abs(node.y - goal.y)
+    return D * (dx + dy)} cb 
+   */
+  manhattanDist(node, goal) {
+    const dx = Math.abs(node.coord.x - this.end.coord.x);
+    const dy = Math.abs(node.coord.y - this.end.coord.y);
+    const D = 1; // cost to move.
+    return D * (dx + dy); 
+  }
+
+  // cost is always one cuz we r basic af.
+  getCost() {
+    return 1;
+  }
+
+  // boy i really should have used a graph lol.
+  getNeighbors(node) {
+
+    return []; 
+  }
+
+  aStar(node, goal) {
+    const frontier = new PriorityQueue(); 
+    frontier.put(node, 0);
+    const from = {};
+    const cost = {};
+    from[node.getKey()] = null;
+    cost[node.getKey()] = 0;
+
+    while(!frontier.empty()) {
+      let current = frontier.get();
+      if (current.getKey() === goal.getKey()) {
+        console.log(from);
+        return;
+      }
+
+      const neighbors = this.getNeighbors(current);
+      for (let next of neighbors) {
+        const newCost = cost[current.getKey()] + this.getCost(current, next);
+        if (cost[next.getKey()] === undefined || newCost < cost[next.getKey()]) {
+          cost[next.getKey()] = newCost;
+          let priority = newCost + this.manhattanDist(next, goal);
+          frontier.put(next, priority);
+          from[next.getKey()] = current;
+        }
+      }
+    }
   }
 }
 

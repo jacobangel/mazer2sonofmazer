@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styles from './App.css';
-import { Cell, Maze } from './Maze';
+import { Cell, Maze, BORDER } from './Maze';
 
 
 // draw a grid on a canvas. 
@@ -112,7 +112,7 @@ class MazeExample extends Component {
         ctx.beginPath();
         ctx.moveTo(2+ x * gridSize, 2 + y * gridSize);  
         ctx.lineTo(2+ x2 * gridSize, 2 + y2 * gridSize);
-        if (type === 'START') {
+        if (type === BORDER.ENTRANCE) {
           ctx.strokeStyle = '#FF0000';
           ctx.lineWidth = Math.max(gridSize/8, 1);
         } else {
@@ -141,6 +141,9 @@ class MazeExample extends Component {
     this.setState({ seed: Math.random() });
   }
 
+  handleAStar() {
+  }
+
   render() {
     const { height, width, gridSize } = this.state;
     return (
@@ -155,6 +158,7 @@ class MazeExample extends Component {
         <ul>
           <li><button onClick={this.handleReset}>Reset Grid</button></li>
           <li><button onClick={this.handleDraw}>Draw</button></li>
+          <li><button onClick={this.handleAStar}>Traverse A*</button></li>
           <li>Grid Size: <input type='range' value={this.state.gridSize} min={5} max={80} step={1} onChange={(e) => {
             const { value } = e.target;
             this.setState({ gridSize: value });
