@@ -115,7 +115,7 @@ class MazeExample extends Component {
       const { gridSize } = this.state;
       const fillBorder = (x, y, type, cost) => {
         const fillMap = {
-          PATH: '#770000',
+          PATH: '#FF4444',
           SCANNED: '#FFFF00',
           EMPTY: '#FFFFFF'
         }
@@ -157,12 +157,9 @@ class MazeExample extends Component {
 
   handleReset() {
     this.clear(this.comp.ctx, this.comp.canvas)
-    const maze = this.getMaze(this.props.type, this.props.width, this.props.height);
+    const maze = this.getMaze(this.props.type);
     this.setState({
-      width: this.props.width,
-      height: this.props.height,
-      gridSize: this.props.gridSize,
-      maze,
+       maze,
     });
   }
 
@@ -201,12 +198,12 @@ class MazeExample extends Component {
             const { value } = e.target;
             this.setState({ gridSize: value });
           }} /></li>
-          <li>Columns: <input type='range' value={this.state.width} min={5} max={40} step={1} onChange={(e) => {
+          <li>Columns: <input type='range' value={this.state.width} min={5} max={80} step={1} onChange={(e) => {
             const { value } = e.target;
             const maze = this.getMaze(this.props.type);
             this.setState({ width: value, maze });
           }} /></li>
-          <li>Rows: <input type='range' value={this.state.height} min={5} max={40} step={1} onChange={(e) => {
+          <li>Rows: <input type='range' value={this.state.height} min={5} max={80} step={1} onChange={(e) => {
             const { value } = e.target;
             const maze = this.getMaze(this.props.type);
             this.setState({ height: value, maze });
